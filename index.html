@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="MoodyMuc" />
+  <link rel="apple-touch-icon" href="icon.png" />
+  <link rel="manifest" href="manifest.json" />
+  <title>MoodyMuc</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f5f5f0; color: #1a1a1a; min-height: 100dvh; padding-bottom: env(safe-area-inset-bottom); }
+    .app { max-width: 520px; margin: 0 auto; padding: 1.2rem 1rem 5rem; }
+    h1 { font-size: 22px; font-weight: 600; }
+    .subtitle { font-size: 13px; color: #888; margin-left: 6px; }
+    .tabs { display: flex; gap: 0; border-bottom: 1px solid #e0e0d8; margin: 14px 0 18px; }
+    .tab { background: none; border: none; border-bottom: 2px solid transparent; padding: 7px 18px; font-size: 14px; cursor: pointer; color: #888; font-family: inherit; margin-bottom: -1px; }
+    .tab.active { color: #1a1a1a; border-bottom-color: #1a1a1a; font-weight: 500; }
+    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+    .metric { background: #ebebE4; border-radius: 10px; padding: 10px 10px; }
+    .metric-label { font-size: 11px; color: #888; margin-bottom: 2px; }
+    .metric-val { font-size: 17px; font-weight: 600; }
+    .card { background: #fff; border: 0.5px solid #ddddd5; border-radius: 14px; padding: 1rem 1.1rem; margin-bottom: 10px; }
+    .field-label { font-size: 13px; color: #888; margin-bottom: 6px; }
+    .btn-row { display: flex; gap: 8px; }
+    .cat-btn, .sev-btn { flex: 1; padding: 8px 6px; border-radius: 9px; border: 0.5px solid #ddd; background: #fff; font-family: inherit; font-size: 12px; cursor: pointer; transition: all .15s; }
+    .cat-btn.active { border-width: 1.5px; border-color: #333; background: #f0f0e8; font-weight: 500; }
+    .sev-btn { font-size: 13px; font-weight: 500; }
+    .note-row { display: flex; gap: 8px; align-items: flex-start; }
+    textarea { flex: 1; resize: none; font-family: inherit; font-size: 14px; padding: 8px 10px; border-radius: 9px; border: 0.5px solid #ddd; background: #fff; color: #1a1a1a; min-height: 56px; outline: none; }
+    textarea:focus { border-color: #aaa; }
+    .mic-btn { width: 36px; height: 36px; border-radius: 50%; border: 0.5px solid #ddd; background: #f5f5f0; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .mic-btn.active { background: #fcc; border-color: #D85A30; }
+    .log-btn { width: 100%; padding: 11px; border-radius: 10px; border: 0.5px solid #ccc; background: #fff; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: background .3s, color .3s; }
+    .log-btn.saved { background: #eaf3de; color: #3B6D11; border-color: #97C459; }
+    .filter-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+    .filter-btn { padding: 5px 12px; border-radius: 99px; border: 0.5px solid #ddd; background: #fff; font-size: 12px; cursor: pointer; font-family: inherit; }
+    .filter-btn.active { border-width: 1.5px; border-color: #333; background: #f0f0e8; font-weight: 500; }
+    .entry { background: #fff; border: 0.5px solid #ddd; border-radius: 12px; padding: 11px 12px; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 10px; }
+    .sev-badge { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+    .entry-cat { font-size: 12px; font-weight: 500; }
+    .entry-date { font-size: 11px; color: #aaa; }
+    .entry-note { font-size: 13px; color: #666; margin-top: 3px; }
+    .del-btn { background: none; border: none; cursor: pointer; color: #bbb; font-size: 18px; line-height: 1; padding: 0 2px; margin-left: auto; }
+    .empty { text-align: center; color: #aaa; font-size: 14px; margin-top: 40px; }
+    .trend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .legend { display: flex; gap: 16px; font-size: 12px; color: #888; margin-bottom: 10px; align-items: center; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+    .legend-line { width: 16px; height: 2px; display: inline-block; }
+    .chart-wrap { position: relative; width: 100%; height: 260px; }
+    .section-gap { margin-bottom: 14px; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:4px">
+    <span style="font-size:22px;font-weight:600">MoodyMuc</span>
+    <span class="subtitle">mood tracker</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('log',this)">Log</button>
+    <button class="tab" onclick="showTab('history',this)">History</button>
+    <button class="tab" onclick="showTab('trends',this)">Trends</button>
+  </div>
+
+  <!-- LOG TAB -->
+  <div id="tab-log">
+    <div class="metrics" id="metrics"></div>
+    <div class="card">
+      <div class="section-gap">
+        <div class="field-label">Category</div>
+        <div class="btn-row" id="cat-btns"></div>
+      </div>
+      <div class="section-gap">
+        <div class="field-label">Severity</div>
+        <div class="btn-row" id="sev-btns"></div>
+        <div id="sev-label" style="font-size:11px;text-align:center;margin-top:4px"></div>
+      </div>
+      <div class="section-gap">
+        <div class="field-label">Note <span style="color:#bbb;font-weight:400">(optional)</span></div>
+        <div class="note-row">
+          <textarea id="note-input" rows="2" placeholder="What happened?"></textarea>
+          <button class="mic-btn" id="mic-btn" onclick="toggleVoice()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="9" y="2" width="6" height="11" rx="3"/>
+              <path d="M5 10a7 7 0 0 0 14 0"/>
+              <line x1="12" y1="19" x2="12" y2="22"/>
+              <line x1="8" y1="22" x2="16" y2="22"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <button class="log-btn" id="log-btn" onclick="addEntry()">Log incident</button>
+    </div>
+  </div>
+
+  <!-- HISTORY TAB -->
+  <div id="tab-history" style="display:none">
+    <div class="filter-row" id="filter-row"></div>
+    <div id="entry-list"></div>
+  </div>
+
+  <!-- TRENDS TAB -->
+  <div id="tab-trends" style="display:none">
+    <div class="trend-grid" id="trend-grid"></div>
+    <div class="legend">
+      <span style="display:flex;align-items:center;gap:4px"><span class="legend-dot" style="background:#F09595"></span>Incidents</span>
+      <span style="display:flex;align-items:center;gap:4px"><span class="legend-line" style="background:#D85A30"></span>Avg severity</span>
+    </div>
+    <div class="chart-wrap"><canvas id="chart"></canvas></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const CATS = ["Mood / attitude", "Criticism / complaint"];
+const SEV_LABELS = ["Mild","Low","Medium","High","Extreme"];
+const SEV_COLORS = ["#639922","#BA7517","#BA7517","#D85A30","#A32D2D"];
+const STORAGE_KEY = "moodymuc_v1";
+let entries = [], selCat = CATS[0], selSev = 3, filter = "All", recog = null, listening = false, chartInst = null;
+
+function load() { try { entries = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { entries = []; } }
+function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); }
+function fmt(ts) { return new Date(ts).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}); }
+function fmtShort(ts) { return new Date(ts).toLocaleDateString("en-GB",{day:"numeric",month:"short"}); }
+
+function renderCatBtns() {
+  document.getElementById("cat-btns").innerHTML = CATS.map(c =>
+    `<button class="cat-btn${c===selCat?" active":""}" onclick="selCat='${c}';renderCatBtns()">${c}</button>`).join("");
+}
+function renderSevBtns() {
+  document.getElementById("sev-btns").innerHTML = [1,2,3,4,5].map(s =>
+    `<button class="sev-btn" style="border-color:${s===selSev?SEV_COLORS[s-1]:"#ddd"};background:${s===selSev?SEV_COLORS[s-1]+"22":"#fff"};color:${s===selSev?SEV_COLORS[s-1]:"#888"}" onclick="selSev=${s};renderSevBtns()">${s}</button>`).join("");
+  document.getElementById("sev-label").style.color = SEV_COLORS[selSev-1];
+  document.getElementById("sev-label").textContent = SEV_LABELS[selSev-1];
+}
+function renderMetrics() {
+  const total = entries.length;
+  const week = entries.filter(e=>Date.now()-e.ts<7*86400000).length;
+  const avg = total ? (entries.reduce((a,b)=>a+b.sev,0)/total).toFixed(1) : "—";
+  const top = CATS.map(c=>({c,n:entries.filter(e=>e.cat===c).length})).sort((a,b)=>b.n-a.n)[0];
+  document.getElementById("metrics").innerHTML = [
+    {l:"Total",v:total},{l:"This week",v:week},{l:"Avg sev",v:avg},{l:"Top type",v:top?.n>0?top.c.split(" / ")[0]:"—"}
+  ].map(m=>`<div class="metric"><div class="metric-label">${m.l}</div><div class="metric-val">${m.v}</div></div>`).join("");
+}
+function renderHistory() {
+  const fil = filter==="All"?entries:entries.filter(e=>e.cat===filter);
+  document.getElementById("filter-row").innerHTML = ["All",...CATS].map(f=>
+    `<button class="filter-btn${f===filter?" active":""}" onclick="filter='${f}';renderHistory()">${f}</button>`).join("");
+  const el = document.getElementById("entry-list");
+  if (!fil.length) { el.innerHTML=`<div class="empty">No entries yet.</div>`; return; }
+  el.innerHTML = fil.map(e=>`
+    <div class="entry">
+      <div class="sev-badge" style="background:${SEV_COLORS[e.sev-1]}22;color:${SEV_COLORS[e.sev-1]}">${e.sev}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <span class="entry-cat">${e.cat}</span>
+          <span class="entry-date">${fmt(e.ts)}</span>
+        </div>
+        ${e.note?`<div class="entry-note">${e.note}</div>`:""}
+      </div>
+      <button class="del-btn" onclick="delEntry(${e.id})">×</button>
+    </div>`).join("");
+}
+function renderTrends() {
+  const total = entries.length;
+  document.getElementById("trend-grid").innerHTML = CATS.map(c=>{
+    const n = entries.filter(e=>e.cat===c).length;
+    const pct = total>0?Math.round(n/total*100):0;
+    return `<div class="metric"><div class="metric-label">${c}</div><div class="metric-val">${n}</div><div style="font-size:11px;color:#aaa">${pct}% of total</div></div>`;
+  }).join("");
+  drawChart();
+}
+function drawChart() {
+  if (!window.Chart) return;
+  if (chartInst) { chartInst.destroy(); chartInst=null; }
+  const days=30, now=Date.now();
+  const buckets = Array.from({length:days},(_,i)=>{
+    const d=new Date(now-(days-1-i)*86400000);
+    return {label:fmtShort(d.getTime()),count:0,sev:0,n:0};
+  });
+  entries.forEach(e=>{
+    const diff=Math.floor((now-e.ts)/86400000);
+    if(diff<days){const idx=days-1-diff;if(idx>=0){buckets[idx].count++;buckets[idx].sev+=e.sev;buckets[idx].n++;}}
+  });
+  const showEvery=Math.ceil(days/10);
+  chartInst = new Chart(document.getElementById("chart"),{
+    type:"bar",
+    data:{
+      labels:buckets.map((b,i)=>i%showEvery===0?b.label:""),
+      datasets:[
+        {type:"bar",data:buckets.map(b=>b.count),backgroundColor:"#F09595",yAxisID:"y"},
+        {type:"line",data:buckets.map(b=>b.n>0?+(b.sev/b.n).toFixed(1):null),borderColor:"#D85A30",backgroundColor:"transparent",pointRadius:3,borderWidth:2,yAxisID:"y2",spanGaps:true}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{autoSkip:false,maxRotation:45,font:{size:10}}},
+        y:{beginAtZero:true,ticks:{stepSize:1},title:{display:true,text:"Count",font:{size:10}}},
+        y2:{position:"right",min:0,max:5,ticks:{stepSize:1},grid:{drawOnChartArea:false},title:{display:true,text:"Avg sev",font:{size:10}}}
+      }
+    }
+  });
+}
+
+function addEntry() {
+  const note = document.getElementById("note-input").value.trim();
+  entries.unshift({id:Date.now(),ts:Date.now(),cat:selCat,sev:selSev,note});
+  save(); renderMetrics();
+  document.getElementById("note-input").value="";
+  selSev=3; renderSevBtns();
+  const btn=document.getElementById("log-btn");
+  btn.textContent="Logged!"; btn.classList.add("saved");
+  setTimeout(()=>{btn.textContent="Log incident";btn.classList.remove("saved");},1800);
+}
+function delEntry(id) { entries=entries.filter(e=>e.id!==id); save(); renderHistory(); renderMetrics(); }
+
+function toggleVoice() {
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){alert("Voice not supported in this browser.");return;}
+  if(listening){recog?.stop();return;}
+  recog=new SR(); recog.lang="en-US"; recog.interimResults=false;
+  recog.onresult=e=>{
+    const t=e.results[0][0].transcript;
+    const inp=document.getElementById("note-input");
+    inp.value=(inp.value+" "+t).trim();
+  };
+  recog.onend=()=>{listening=false;document.getElementById("mic-btn").classList.remove("active");};
+  recog.start(); listening=true; document.getElementById("mic-btn").classList.add("active");
+}
+
+let activeTab="log";
+function showTab(name,btn) {
+  ["log","history","trends"].forEach(t=>{
+    document.getElementById("tab-"+t).style.display=t===name?"block":"none";
+  });
+  document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  activeTab=name;
+  if(name==="history") renderHistory();
+  if(name==="trends") renderTrends();
+}
+
+load(); renderCatBtns(); renderSevBtns(); renderMetrics();
+</script>
+</body>
+</html>
